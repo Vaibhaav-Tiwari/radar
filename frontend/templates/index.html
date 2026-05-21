@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Radar — Competitive Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:        #0e0d0b;
+      --paper:      #f5f0e8;
+      --warm-mid:   #e8dfc8;
+      --amber:      #c4860a;
+      --amber-pale: #e8b84b;
+      --rust:       #8b3a1a;
+      --smoke:      #2a2620;
+      --ash:        #6b6358;
+      --border:     rgba(196,134,10,0.22);
+      --border-dim: rgba(196,134,10,0.10);
+      --glow:       rgba(196,134,10,0.08);
+
+      --ff-serif:   'Cormorant Garamond', Georgia, serif;
+      --ff-sans:    'DM Sans', system-ui, sans-serif;
+      --ff-mono:    'DM Mono', monospace;
+
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--ff-sans);
+      background: var(--ink);
+      color: var(--paper);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Noise Texture Overlay ────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.028;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* ── Header ───────────────────────────────────────────────── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+      border-bottom: 1px solid var(--border-dim);
+      background: rgba(14,13,11,0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .logo {
+      font-family: var(--ff-serif);
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      color: var(--paper);
+      text-decoration: none;
+    }
+    .logo span { color: var(--amber); }
+
+    .header-tag {
+      font-family: var(--ff-mono);
+      font-size: 10px;
+      font-weight: 300;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ash);
+    }
+
+    /* ── Hero ─────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 30%, rgba(196,134,10,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(139,58,26,0.06) 0%, transparent 60%);
+    }
+
+    .hero-eyebrow {
+      font-family: var(--ff-mono);
+      font-size: 10px;
+      font-weight: 300;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeUp 0.9s var(--ease-out-expo) 0.1s forwards;
+    }
+
+    h1 {
+      font-family: var(--ff-serif);
+      font-size: clamp(52px, 9vw, 112px);
+      font-weight: 300;
+      line-height: 0.92;
+      letter-spacing: -0.01em;
+      color: var(--paper);
+      margin-bottom: 32px;
+      opacity: 0;
+      animation: fadeUp 1s var(--ease-out-expo) 0.25s forwards;
+    }
+    h1 em {
+      font-style: italic;
+      color: var(--amber-pale);
+    }
+
+    .hero-sub {
+      font-size: 15px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--ash);
+      max-width: 440px;
+      margin-bottom: 56px;
+      opacity: 0;
+      animation: fadeUp 1s var(--ease-out-expo) 0.4s forwards;
+    }
+
+    /* ── Search Form ──────────────────────────────────────────── */
+    .search-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 580px;
+      opacity: 0;
+      animation: fadeUp 1s var(--ease-out-expo) 0.55s forwards;
+    }
+
+    .search-form {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      background: rgba(245,240,232,0.04);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-form:focus-within {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(196,134,10,0.12);
+    }
+
+    #url-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 18px 24px;
+      font-family: var(--ff-mono);
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--paper);
+      letter-spacing: 0.02em;
+    }
+    #url-input::placeholder { color: var(--ash); }
+
+    #scan-btn {
+      background: var(--amber);
+      border: none;
+      cursor: pointer;
+      padding: 18px 32px;
+      font-family: var(--ff-sans);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink);
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    #scan-btn:hover { background: var(--amber-pale); }
+    #scan-btn:active { transform: scale(0.98); }
+    #scan-btn:disabled {
+      background: var(--ash);
+      cursor: not-allowed;
+    }
+
+    .search-hint {
+      margin-top: 12px;
+      font-family: var(--ff-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--ash);
+      text-align: left;
+      padding-left: 2px;
+    }
+
+    /* ── Divider line ─────────────────────────────────────────── */
+    .section-divider {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 48px;
+      border-top: 1px solid var(--border-dim);
+    }
+
+    /* ── Results Section ──────────────────────────────────────── */
+    #results {
+      padding: 0 48px 120px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .results-header {
+      padding: 64px 0 48px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-dim);
+      margin-bottom: 56px;
+    }
+
+    .results-target {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .results-label {
+      font-family: var(--ff-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ash);
+    }
+
+    .results-url {
+      font-family: var(--ff-serif);
+      font-size: 32px;
+      font-weight: 300;
+      color: var(--paper);
+      letter-spacing: 0.02em;
+    }
+
+    .results-count {
+      font-family: var(--ff-serif);
+      font-size: 72px;
+      font-weight: 300;
+      line-height: 1;
+      color: var(--amber);
+      letter-spacing: -0.02em;
+    }
+
+    /* ── Competitor Grid ──────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 2px;
+    }
+
+    .card {
+      background: rgba(245,240,232,0.02);
+      border: 1px solid var(--border-dim);
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: border-color 0.3s, background 0.3s;
+      animation: cardIn 0.7s var(--ease-out-expo) forwards;
+    }
+    .card:hover {
+      background: rgba(245,240,232,0.035);
+      border-color: var(--border);
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--amber), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .card:hover::before { opacity: 1; }
+
+    .card-index {
+      position: absolute;
+      top: 40px; right: 40px;
+      font-family: var(--ff-serif);
+      font-size: 48px;
+      font-weight: 300;
+      color: rgba(196,134,10,0.12);
+      line-height: 1;
+    }
+
+    .card-name {
+      font-family: var(--ff-serif);
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--paper);
+      margin-bottom: 6px;
+      line-height: 1.1;
+    }
+
+    .card-url {
+      font-family: var(--ff-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--amber);
+      text-decoration: none;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+    .card-url:hover { color: var(--amber-pale); }
+
+    .card-desc {
+      font-size: 13px;
+      font-weight: 300;
+      line-height: 1.65;
+      color: var(--ash);
+      margin-bottom: 32px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ── Signal Sections ──────────────────────────────────────── */
+    .signal-section { margin-bottom: 24px; }
+
+    .signal-label {
+      font-family: var(--ff-mono);
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ash);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .signal-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-dim);
+    }
+
+    .signal-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border: 1px solid;
+      border-radius: 2px;
+      font-family: var(--ff-mono);
+      font-size: 8px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      margin-left: 8px;
+    }
+    .pill-news    { color: #7eb8d4; border-color: rgba(126,184,212,0.3); }
+    .pill-jobs    { color: #88c98a; border-color: rgba(136,201,138,0.3); }
+    .pill-product { color: #c4a060; border-color: rgba(196,160,96,0.3); }
+
+    .signal-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-dim);
+    }
+    .signal-item:last-child { border-bottom: none; }
+
+    .signal-title {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--warm-mid);
+      line-height: 1.45;
+      margin-bottom: 4px;
+      text-decoration: none;
+      display: block;
+      transition: color 0.15s;
+    }
+    a.signal-title:hover { color: var(--amber-pale); }
+
+    .signal-meta {
+      font-family: var(--ff-mono);
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--ash);
+    }
+
+    .signal-snippet {
+      font-size: 11px;
+      font-weight: 300;
+      color: var(--ash);
+      line-height: 1.5;
+      margin-top: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .empty-signal {
+      font-family: var(--ff-mono);
+      font-size: 10px;
+      color: rgba(107,99,88,0.5);
+      padding: 8px 0;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Loading State ────────────────────────────────────────── */
+    #loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 80px 48px;
+      text-align: center;
+    }
+
+    .loader-ring {
+      width: 48px; height: 48px;
+      border: 1px solid var(--border-dim);
+      border-top-color: var(--amber);
+      border-radius: 50%;
+      animation: spin 1.2s linear infinite;
+    }
+
+    .loader-text {
+      font-family: var(--ff-serif);
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--paper);
+    }
+    .loader-sub {
+      font-family: var(--ff-mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--ash);
+      text-transform: uppercase;
+    }
+
+    /* ── Error State ──────────────────────────────────────────── */
+    #error-box {
+      display: none;
+      margin: 48px auto;
+      max-width: 560px;
+      padding: 32px 40px;
+      border: 1px solid rgba(139,58,26,0.4);
+      background: rgba(139,58,26,0.06);
+      border-radius: 2px;
+    }
+    .error-label {
+      font-family: var(--ff-mono);
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--rust);
+      margin-bottom: 10px;
+    }
+    .error-msg {
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--warm-mid);
+      line-height: 1.6;
+    }
+
+    /* ── Footer ───────────────────────────────────────────────── */
+    footer {
+      padding: 40px 48px;
+      border-top: 1px solid var(--border-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-note {
+      font-family: var(--ff-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--ash);
+    }
+    .footer-note a { color: var(--amber); text-decoration: none; }
+    .footer-note a:hover { color: var(--amber-pale); }
+
+    /* ── Animations ───────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── Responsive ───────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      header { padding: 16px 24px; }
+      h1 { font-size: clamp(42px, 12vw, 72px); }
+      .hero { padding: 100px 24px 60px; }
+      #results { padding: 0 24px 80px; }
+      .results-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .grid { grid-template-columns: 1fr; }
+      .card { padding: 28px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <a class="logo" href="/">RaDaR</span></a>
+    <span class="header-tag">Competitive Intelligence</span>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <p class="hero-eyebrow">Powered by Exa AI</p>
+    <h1>Know your<br /><em>battlefield.</em></h1>
+    <p class="hero-sub">
+      Enter any company URL. Radar maps their competitive landscape i.e. funding signals, hiring momentum, product moves in seconds.
+    </p>
+
+    <div class="search-wrap">
+      <div class="search-form">
+        <input
+          id="url-input"
+          type="text"
+          placeholder="stripe.com"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button id="scan-btn" onclick="startScan()">Scan</button>
+      </div>
+      <p class="search-hint">Try: stripe.com &nbsp;/&nbsp; notion.so &nbsp;/&nbsp; figma.com</p>
+    </div>
+  </section>
+
+  <!-- Loading -->
+  <div id="loading" style="display:none; flex-direction:column; align-items:center; gap:24px; padding:80px 48px; text-align:center;">
+    <div class="loader-ring"></div>
+    <p class="loader-text">Mapping the competitive landscape</p>
+    <p class="loader-sub" id="loader-step">Discovering similar companies via Exa...</p>
+  </div>
+
+  <!-- Error -->
+  <div id="error-box" style="display:none; margin:48px auto; max-width:560px; padding:32px 40px; border:1px solid rgba(139,58,26,0.4); background:rgba(139,58,26,0.06); border-radius:2px;">
+    <p class="error-label">Error</p>
+    <p class="error-msg" id="error-msg">Something went wrong.</p>
+  </div>
+
+  <!-- Results -->
+  <section id="results" style="display:none; padding:0 48px 120px; max-width:1400px; margin:0 auto;">
+    <div class="results-header">
+      <div class="results-target">
+        <span class="results-label">Analysis target</span>
+        <span class="results-url" id="results-url"></span>
+      </div>
+      <div class="results-count" id="results-count">0</div>
+    </div>
+    <div class="grid" id="competitor-grid"></div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <span class="footer-note">Radar &mdash; Competitive Intelligence Radar &mdash; Built with <a href="https://exa.ai" target="_blank">Exa AI</a></span>
+    <span class="footer-note">Data refreshed on demand &mdash; No caching</span>
+  </footer>
+
+  <script>
+    const API_BASE = '';  // same origin; adjust if running separately
+
+    const loaderSteps = [
+      'Mining competitor articles via Exa...',
+      'Resolving competitor homepages...',
+      'Fetching news and funding signals...',
+      'Scanning job postings for hiring momentum...',
+      'Pulling product update feeds...',
+    ];
+    let stepInterval = null;
+
+    function cycleLoaderSteps() {
+      let i = 0;
+      stepInterval = setInterval(() => {
+        i = (i + 1) % loaderSteps.length;
+        document.getElementById('loader-step').textContent = loaderSteps[i];
+      }, 1800);
+    }
+
+    function showLoading() {
+      document.getElementById('loading').style.display = 'flex';
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('error-box').style.display = 'none';
+      document.getElementById('loader-step').textContent = loaderSteps[0];
+      cycleLoaderSteps();
+    }
+
+    function hideLoading() {
+      document.getElementById('loading').style.display = 'none';
+      clearInterval(stepInterval);
+    }
+
+    function showError(msg) {
+      document.getElementById('error-msg').textContent = msg;
+      document.getElementById('error-box').style.display = 'block';
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '';
+      try {
+        return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch { return ''; }
+    }
+
+    function renderSignalItem(item, type) {
+      const date = item.published_date ? formatDate(item.published_date) : '';
+      const source = item.source || '';
+      const meta = [source, date].filter(Boolean).join(' · ');
+      const snippet = item.snippet || '';
+      const url = item.url || '#';
+      const title = item.title || 'Untitled';
+
+      return `
+        <div class="signal-item">
+          <a class="signal-title" href="${url}" target="_blank" rel="noopener">${escHtml(title)}</a>
+          ${snippet ? `<p class="signal-snippet">${escHtml(snippet)}</p>` : ''}
+          ${meta ? `<p class="signal-meta">${escHtml(meta)}</p>` : ''}
+        </div>
+      `;
+    }
+
+    function renderCard(competitor, index) {
+      const delay = (index * 0.08).toFixed(2);
+      const domain = extractDomain(competitor.url);
+
+      // News
+      let newsHtml = '';
+      if (competitor.news && competitor.news.length > 0) {
+        newsHtml = competitor.news.map(n => renderSignalItem(n, 'news')).join('');
+      } else {
+        newsHtml = '<p class="empty-signal">No recent news found</p>';
+      }
+
+      // Jobs
+      let jobsHtml = '';
+      if (competitor.jobs && competitor.jobs.length > 0) {
+        jobsHtml = competitor.jobs.map(j => renderSignalItem(j, 'jobs')).join('');
+      } else {
+        jobsHtml = '<p class="empty-signal">No active postings found</p>';
+      }
+
+      // Product updates
+      let updatesHtml = '';
+      if (competitor.product_updates && competitor.product_updates.length > 0) {
+        updatesHtml = competitor.product_updates.map(u => renderSignalItem(u, 'product')).join('');
+      } else {
+        updatesHtml = '<p class="empty-signal">No recent product updates</p>';
+      }
+
+      return `
+        <div class="card" style="animation-delay: ${delay}s">
+          <div class="card-index">${String(index + 1).padStart(2, '0')}</div>
+          <h2 class="card-name">${escHtml(competitor.name)}</h2>
+          <a class="card-url" href="${competitor.url}" target="_blank" rel="noopener">${escHtml(domain)}</a>
+          <p class="card-desc">${escHtml(competitor.description || '')}</p>
+
+          <div class="signal-section">
+            <p class="signal-label">
+              News & Funding
+              <span class="signal-pill pill-news">${competitor.news.length} signal${competitor.news.length !== 1 ? 's' : ''}</span>
+            </p>
+            ${newsHtml}
+          </div>
+
+          <div class="signal-section">
+            <p class="signal-label">
+              Hiring Signals
+              <span class="signal-pill pill-jobs">${competitor.jobs.length} role${competitor.jobs.length !== 1 ? 's' : ''}</span>
+            </p>
+            ${jobsHtml}
+          </div>
+
+          <div class="signal-section">
+            <p class="signal-label">
+              Product Moves
+              <span class="signal-pill pill-product">${competitor.product_updates.length} update${competitor.product_updates.length !== 1 ? 's' : ''}</span>
+            </p>
+            ${updatesHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    async function startScan() {
+      const input = document.getElementById('url-input');
+      const btn = document.getElementById('scan-btn');
+      let url = input.value.trim();
+
+      if (!url) {
+        input.focus();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Scanning...';
+      showLoading();
+
+      try {
+        const resp = await fetch(`${API_BASE}/api/scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.detail || `HTTP ${resp.status}`);
+        }
+
+        hideLoading();
+        renderResults(data);
+
+      } catch (err) {
+        hideLoading();
+        showError(err.message || 'Failed to contact the Radar API. Is the server running?');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Scan';
+      }
+    }
+
+    function renderResults(data) {
+      const section = document.getElementById('results');
+      const grid = document.getElementById('competitor-grid');
+
+      document.getElementById('results-url').textContent = extractDomain(data.target_url);
+      document.getElementById('results-count').textContent = `${data.competitors.length} competitors`;
+
+      grid.innerHTML = data.competitors.map((c, i) => renderCard(c, i)).join('');
+
+      section.style.display = 'block';
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Allow Enter key to trigger scan
+    document.getElementById('url-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') startScan();
+    });
+
+    function extractDomain(url) {
+      try {
+        const u = new URL(url.startsWith('http') ? url : 'https://' + url);
+        return u.hostname.replace('www.', '');
+      } catch { return url; }
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>
